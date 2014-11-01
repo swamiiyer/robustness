@@ -21,6 +21,7 @@ simultaneous (False), or sequential (True).
 
 ## Software Dependencies
 
+* [Python](https://www.python.org/)
 * [igraph](http://igraph.org/)
 * [NetworkX](https://networkx.github.io/)
 * [NumPy](http://www.numpy.org/)
