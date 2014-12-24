@@ -21,11 +21,11 @@ simultaneous (False), or sequential (True).
 
 ## Software Dependencies
 
-* [Python](https://www.python.org/)
-* [igraph](http://igraph.org/)
-* [NetworkX](https://networkx.github.io/)
-* [NumPy](http://www.numpy.org/)
-* [Matplotlib](http://matplotlib.org/)
+* [Python](https://www.python.org/) (2.7.6)
+* [igraph](http://igraph.org/) (0.6.5)
+* [NetworkX](https://networkx.github.io/) (1.9.1)
+* [NumPy](http://www.numpy.org/) (1.8.2)
+* [Matplotlib](http://matplotlib.org/) (1.3.1)
 
 ## Contact
 
