@@ -1,27 +1,38 @@
 #!/usr/bin/python
 
-# This script performs robustness analysis on the given network, 
-# which involves removing nodes from the network at random, or in reverse 
-# order of centrality measures (degree, betweenness, closeness, and 
-# eigenvector), and comparing the size of the largest component in the 
-# network to the fraction of nodes removed.
-#
-# Usage: python robustness.py <infile> <outfile> <recalculate>
-#
-# where infile is the name of the network file in gml format, outfile is the 
-# name of the output (pdf) file in which the results of the analysis is 
-# saved, and recalculate (True of False) specifies if the targeted attack is 
-# simultaneous (False), or sequential (True).
+"""
+This script performs robustness analysis on the given network, 
+which involves removing nodes from the network at random, or in reverse 
+order of centrality measures (degree, betweenness, closeness, and 
+eigenvector), and comparing the size of the largest component in the 
+network to the fraction of nodes removed.
 
-import igraph, networkx, numpy, operator, pickle, pylab, random, sys
+Usage: python robustness.py <infile> <outfile> <recalculate>
+
+where infile is the name of the network file in gml format, outfile is the 
+name of the output (pdf) file in which the results of the analysis is 
+saved, and recalculate (True of False) specifies if the targeted attack is 
+simultaneous (False), or sequential (True).
+"""
+
+import igraph, networkx, numpy, operator, pylab, random, sys
 
 def betweenness(infile, recalculate = False):
+    """
+    Performs robustness analysis based on betweenness centrality,  
+    on the network specified by infile using sequential (recalculate = True) 
+    or simultaneous (recalculate = False) approach. Returns a list 
+    with fraction of nodes removed, a list with the corresponding sizes of 
+    the largest component of the network, and the overall vulnerability 
+    of the network.
+    """
+
     g = networkx.read_gml(infile)
     m = networkx.betweenness_centrality(g)
     l = sorted(m.items(), key = operator.itemgetter(1), reverse = True)
     x = []
     y = []
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     x.append(0)
     y.append(len(largest_component) * 1. / n)
@@ -32,20 +43,23 @@ def betweenness(infile, recalculate = False):
             m = networkx.betweenness_centrality(g)
             l = sorted(m.items(), key = operator.itemgetter(1), 
                        reverse = True)
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         x.append(i * 1. / n)
         R += len(largest_component) * 1. / n
         y.append(len(largest_component) * 1. / n)
     return x, y, 0.5 - R / n
 
-# Removes given fraction of nodes from infile network in reverse order of 
-# betweenness centrality (with or without recalculation of centrality values 
-# after each node removal) and saves the network in outfile.
 def betweenness_fracture(infile, outfile, fraction, recalculate = False):
+    """
+    Removes given fraction of nodes from infile network in reverse order of 
+    betweenness centrality (with or without recalculation of centrality values 
+    after each node removal) and saves the network in outfile.
+    """
+
     g = networkx.read_gml(infile)
     m = networkx.betweenness_centrality(g)
     l = sorted(m.items(), key = operator.itemgetter(1), reverse = True)
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     for i in range(1, n):
         g.remove_node(l.pop(0)[0])
@@ -53,11 +67,11 @@ def betweenness_fracture(infile, outfile, fraction, recalculate = False):
             m = networkx.betweenness_centrality(g)
             l = sorted(m.items(), key = operator.itemgetter(1), 
                        reverse = True)
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         if i * 1. / n >= fraction:
             break
     print len(largest_component) * 1. / n
-    components = networkx.strongly_connected_components(g)
+    components = networkx.connected_components(g)
     component_id = 1
     for component in components:
         for node in component:
@@ -66,12 +80,21 @@ def betweenness_fracture(infile, outfile, fraction, recalculate = False):
     networkx.write_gml(g, outfile)
 
 def closeness(infile, recalculate = False):
+    """
+    Performs robustness analysis based on closeness centrality,  
+    on the network specified by infile using sequential (recalculate = True) 
+    or simultaneous (recalculate = False) approach. Returns a list 
+    with fraction of nodes removed, a list with the corresponding sizes of 
+    the largest component of the network, and the overall vulnerability 
+    of the network.
+    """
+
     g = networkx.read_gml(infile)
     m = networkx.closeness_centrality(g)
     l = sorted(m.items(), key = operator.itemgetter(1), reverse = True)
     x = []
     y = []
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     x.append(0)
     y.append(len(largest_component) * 1. / n)
@@ -82,20 +105,23 @@ def closeness(infile, recalculate = False):
             m = networkx.closeness_centrality(g)
             l = sorted(m.items(), key = operator.itemgetter(1), 
                        reverse = True)
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         x.append(i * 1. / n)
         R += len(largest_component) * 1. / n
         y.append(len(largest_component) * 1. / n)
     return x, y, 0.5 - R / n
 
-# Removes given fraction of nodes from infile network in reverse order of 
-# closeness centrality (with or without recalculation of centrality values 
-# after each node removal) and saves the network in outfile.
 def closeness_fracture(infile, outfile, fraction, recalculate = False):
+    """
+    Removes given fraction of nodes from infile network in reverse order of 
+    closeness centrality (with or without recalculation of centrality values 
+    after each node removal) and saves the network in outfile.
+    """
+
     g = networkx.read_gml(infile)
     m = networkx.closeness_centrality(g)
     l = sorted(m.items(), key = operator.itemgetter(1), reverse = True)
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     for i in range(1, n):
         g.remove_node(l.pop(0)[0])
@@ -103,11 +129,11 @@ def closeness_fracture(infile, outfile, fraction, recalculate = False):
             m = networkx.closeness_centrality(g)
             l = sorted(m.items(), key = operator.itemgetter(1), 
                        reverse = True)
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         if i * 1. / n >= fraction:
             break
     print len(largest_component) * 1. / n
-    components = networkx.strongly_connected_components(g)
+    components = networkx.connected_components(g)
     component_id = 1
     for component in components:
         for node in component:
@@ -116,12 +142,21 @@ def closeness_fracture(infile, outfile, fraction, recalculate = False):
     networkx.write_gml(g, outfile)
 
 def degree(infile, recalculate = False):
+    """
+    Performs robustness analysis based on degree centrality,  
+    on the network specified by infile using sequential (recalculate = True) 
+    or simultaneous (recalculate = False) approach. Returns a list 
+    with fraction of nodes removed, a list with the corresponding sizes of 
+    the largest component of the network, and the overall vulnerability 
+    of the network.
+    """
+
     g = networkx.read_gml(infile)
     m = networkx.degree_centrality(g)
     l = sorted(m.items(), key = operator.itemgetter(1), reverse = True)
     x = []
     y = []
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     x.append(0)
     y.append(len(largest_component) * 1. / n)
@@ -132,20 +167,23 @@ def degree(infile, recalculate = False):
             m = networkx.degree_centrality(g)
             l = sorted(m.items(), key = operator.itemgetter(1), 
                        reverse = True)
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         x.append(i * 1. / n)
         R += len(largest_component) * 1. / n
         y.append(len(largest_component) * 1. / n)
     return x, y, 0.5 - R / n
 
-# Removes given fraction of nodes from infile network in reverse order of 
-# degree centrality (with or without recalculation of centrality values 
-# after each node removal) and saves the network in outfile.
 def degree_fracture(infile, outfile, fraction, recalculate = False):
+    """
+    Removes given fraction of nodes from infile network in reverse order of 
+    degree centrality (with or without recalculation of centrality values 
+    after each node removal) and saves the network in outfile.
+    """
+
     g = networkx.read_gml(infile)
     m = networkx.degree_centrality(g)
     l = sorted(m.items(), key = operator.itemgetter(1), reverse = True)
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     for i in range(1, n - 1):
         g.remove_node(l.pop(0)[0])
@@ -153,11 +191,11 @@ def degree_fracture(infile, outfile, fraction, recalculate = False):
             m = networkx.degree_centrality(g)
             l = sorted(m.items(), key = operator.itemgetter(1), 
                        reverse = True)
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         if i * 1. / n >= fraction:
             break
     print len(largest_component) * 1. / n
-    components = networkx.strongly_connected_components(g)
+    components = networkx.connected_components(g)
     component_id = 1
     for component in components:
         for node in component:
@@ -166,6 +204,15 @@ def degree_fracture(infile, outfile, fraction, recalculate = False):
     networkx.write_gml(g, outfile)
 
 def eigenvector(infile, recalculate = False):
+    """
+    Performs robustness analysis based on eigenvector centrality,  
+    on the network specified by infile using sequential (recalculate = True) 
+    or simultaneous (recalculate = False) approach. Returns a list 
+    with fraction of nodes removed, a list with the corresponding sizes of 
+    the largest component of the network, and the overall vulnerability 
+    of the network.
+    """
+
     def indexof(g, s):
         vs = g.vs()
         for i in range(0, len(vs)):
@@ -204,10 +251,13 @@ def eigenvector(infile, recalculate = False):
         y.append(largest_component * 1. / n)
     return x, y, 0.5 - R / n
 
-# Removes given fraction of nodes from infile network in reverse order of 
-# eigenvector centrality (with or without recalculation of centrality values 
-# after each node removal) and saves the network in outfile.
 def eigenvector_fracture(infile, outfile, fraction, recalculate = False):
+    """
+    Removes given fraction of nodes from infile network in reverse order of 
+    eigenvector centrality (with or without recalculation of centrality values 
+    after each node removal) and saves the network in outfile.
+    """
+
     def indexof(g, s):
         vs = g.vs()
         for i in range(0, len(vs)):
@@ -248,25 +298,36 @@ def eigenvector_fracture(infile, outfile, fraction, recalculate = False):
     g.write_gml(outfile)
 
 def rand(infile):
+    """
+    Performs robustness analysis based on random attack, on the network 
+    specified by infile. Returns a list with fraction of nodes removed, a 
+    list with the corresponding sizes of the largest component of the 
+    network, and the overall vulnerability of the network.
+    """
+
     g = networkx.read_gml(infile)
     l = [(node, 0) for node in g.nodes()]
     random.shuffle(l)
     x = []
     y = []
-    largest_component = networkx.strongly_connected_components(g)[0]
+    largest_component = networkx.connected_components(g).next()
     n = len(g.nodes())
     x.append(0)
     y.append(len(largest_component) * 1. / n)
     R = 0.0
     for i in range(1, n):
         g.remove_node(l.pop(0)[0])
-        largest_component = networkx.strongly_connected_components(g)[0]
+        largest_component = networkx.connected_components(g).next()
         x.append(i * 1. / n)
         R += len(largest_component) * 1. / n
         y.append(len(largest_component) * 1. / n)
     return x, y, 0.5 - R / n
 
 def main(argv):
+    """
+    Entry point.
+    """
+
     if len(argv) != 3:
         print "python robustness.py <infile> <outfile> <recalculate>"
         sys.exit(0)
@@ -284,7 +345,6 @@ def main(argv):
     x5, y5, VR = rand(infile)
 
     print VD, VB, VC, VE, VR
-    sys.exit(0)
 
     pylab.figure(1, dpi = 500)
     pylab.xlabel(r"Fraction of vertices removed ($\rho$)")
@@ -294,8 +354,11 @@ def main(argv):
     pylab.plot(x3, y3, "r-", alpha = 0.6, linewidth = 2.0)
     pylab.plot(x4, y4, "c-", alpha = 0.6, linewidth = 2.0)
     pylab.plot(x5, y5, "k-", alpha = 0.6, linewidth = 2.0)
-    pylab.legend((r"Degree ($V = %4.3f$)" %(VD), "Betweenness ($V = %4.3f$)" %(VB), "Closeness ($V = %4.3f$)" %(VC), 
-                  "Eigenvector ($V = %4.3f$)" %(VE), "Random ($V = %4.3f$)" %(VR)), 
+    pylab.legend((r"Degree ($V = %4.3f$)" %(VD), 
+                  "Betweenness ($V = %4.3f$)" %(VB), 
+                  "Closeness ($V = %4.3f$)" %(VC), 
+                  "Eigenvector ($V = %4.3f$)" %(VE), 
+                  "Random ($V = %4.3f$)" %(VR)), 
                  loc = "upper right", shadow = False)
 
     # Inset showing vulnerability values.
@@ -304,7 +367,8 @@ def main(argv):
     xlocations = numpy.array(range(len(V)))+0.2
     width = 0.2
     inset = pylab.axes([0.735, 0.45, 0.15, 0.15])
-    pylab.bar(xlocations, V, color = ["b", "g", "r", "c", "k"], alpha = 0.6, width = width)
+    pylab.bar(xlocations, V, color = ["b", "g", "r", "c", "k"], 
+              alpha = 0.6, width = width)
     pylab.yticks([0.0, 0.25, 0.5])
     pylab.xticks(xlocations + width / 2, labels)
     pylab.xlim(0, xlocations[-1] + width * 2)
